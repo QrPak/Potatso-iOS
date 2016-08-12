@@ -33,7 +33,7 @@ extension ConfigurationGroupError: CustomStringConvertible {
 public class ConfigurationGroup: BaseModel {
     public dynamic var editable = true
     public dynamic var name = ""
-    public dynamic var defaultToProxy = false
+    public dynamic var defaultToProxy = true
     public dynamic var dns = ""
     public let proxies = List<Proxy>()
     public let ruleSets = List<RuleSet>()
@@ -42,15 +42,15 @@ public class ConfigurationGroup: BaseModel {
         return ["name"]
     }
     
-    public func validate(inRealm realm: Realm) throws {
+    public func validate(inRealm realm: Realm, includeSelf: Bool = false) throws {
         guard name.characters.count > 0 else {
             throw ConfigurationGroupError.EmptyName
         }
-        guard realm.objects(ConfigurationGroup).filter("name = '\(name)'").first == nil else {
+        guard realm.objects(ConfigurationGroup).filter("name = '\(name)'").count <= (includeSelf ? 1 : 0) else {
             throw ConfigurationGroupError.NameAlreadyExists
         }
-
     }
+
     public override var description: String {
         return name
     }
@@ -65,7 +65,7 @@ extension ConfigurationGroup {
         }
         self.name = name
         if realm.objects(RuleSet).filter("name = '\(name)'").first != nil {
-            self.name = ConfigurationGroup.dateFormatter.stringFromDate(NSDate())
+            self.name = "\(name) \(ConfigurationGroup.dateFormatter.stringFromDate(NSDate()))"
         }
         if let proxyName = dictionary["proxy"] as? String, proxy = realm.objects(Proxy).filter("name = '\(proxyName)'").first {
             self.proxies.removeAll()
@@ -90,6 +90,23 @@ extension ConfigurationGroup {
     }
 
     
+}
+
+// API
+extension ConfigurationGroup {
+
+    public func changeName(name: String) throws {
+        defaultRealm.beginWrite()
+        self.name = name
+        do {
+            try validate(inRealm: defaultRealm, includeSelf: true)
+        }catch {
+            defaultRealm.cancelWrite()
+            throw error
+        }
+        try defaultRealm.commitWrite()
+    }
+
 }
 
 public func ==(lhs: ConfigurationGroup, rhs: ConfigurationGroup) -> Bool {

@@ -46,6 +46,11 @@ public class AppDelegate: UIResponder, UIApplicationDelegate {
     
     public func applicationWillEnterForeground(application: UIApplication) {
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.willEnterForeground] {
+            for item in lifeCycleItems{
+                item.object?.applicationWillEnterForeground?(application)
+            }
+        }
     }
     
     public func applicationDidBecomeActive(application: UIApplication) {
@@ -67,15 +72,23 @@ public class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     public func application(application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: NSData) {
-        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.didRegisterForRemoteNotificationsWithDeviceToken] {
+        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.remoteNotification] {
             for item in lifeCycleItems{
                 item.object?.application?(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
             }
         }
     }
+
+    public func application(application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: NSError) {
+        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.remoteNotification] {
+            for item in lifeCycleItems{
+                item.object?.application?(application, didFailToRegisterForRemoteNotificationsWithError: error)
+            }
+        }
+    }
     
     public func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject], fetchCompletionHandler completionHandler: (UIBackgroundFetchResult) -> Void) {
-        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.didReceiveRemoteNotificationFetchCompletionHandler] {
+        if let lifeCycleItems = appConfig.lifeCycleConfig[LifeCycleKey.remoteNotification] {
             for item in lifeCycleItems{
                 item.object?.application?(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)
             }

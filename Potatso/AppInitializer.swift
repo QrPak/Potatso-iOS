@@ -10,7 +10,6 @@ import Foundation
 import ICSMainFramework
 import Appirater
 import Fabric
-import Crashlytics
 
 let appID = "1070901416"
 
@@ -18,19 +17,16 @@ class AppInitializer: NSObject, AppLifeCycleProtocol {
     
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject : AnyObject]?) -> Bool {
         configLogging()
-        Fabric.with([Answers.self, Crashlytics.self])
         configAppirater()
+        #if !DEBUG
+            Fabric.with([Answers.self, Crashlytics.self])
+        #endif
+        configHelpShift()
         return true
     }
 
     func configAppirater() {
         Appirater.setAppId(appID)
-        Appirater.setUsesUntilPrompt(100)
-        Appirater.setDaysUntilPrompt(0)
-        Appirater.setTimeBeforeReminding(100)
-        Appirater.setSignificantEventsUntilPrompt(200)
-        Appirater.setDebug(false)
-        Appirater.appLaunched(true)
     }
 
     func configLogging() {
@@ -47,6 +43,11 @@ class AppInitializer: NSObject, AppLifeCycleProtocol {
         #else
 
         #endif
+    }
+
+    func configHelpShift() {
+        HelpshiftCore.initializeWithProvider(HelpshiftAll.sharedInstance())
+        HelpshiftCore.installForApiKey(HELPSHIFT_KEY, domainName: HELPSHIFT_DOMAIN, appID: HELPSHIFT_ID)
     }
     
 }
